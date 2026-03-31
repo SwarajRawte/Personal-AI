@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start FastAPI backend",
+			"type": "shell",
+			"command": "\"C:/Program Files/Python314/python.exe\" -m uvicorn main:app --reload",
+			"args": [],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

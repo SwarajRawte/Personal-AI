@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+backend/backend_venv/
+__pycache__/
+*.pyc
+
+# Secrets & Environment
+.env
+backend/.env
+frontend/.env
+*.key
+
+# Build & OS
+dist/
+build/
+.DS_Store
+Thumbs.db
+
+# UI Artifacts
+backend/gen_*.png
+frontend/src/assets/gen_*.png

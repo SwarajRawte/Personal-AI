@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: personalai-backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Optional: Add any missing env vars here
+      - GOOGLE_CLIENT_ID=1076982736212-0fvtfej9mvdv5sanb818e4jsvh7h5cl0.apps.googleusercontent.com
+    volumes:
+      # Mount the local db so it persists between restarts
+      - ./backend/test.db:/app/test.db
+
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: personalai-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
