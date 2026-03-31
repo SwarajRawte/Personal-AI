@@ -41,6 +41,8 @@ function Chat({ token }) {
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarPinned, setSidebarPinned] = useState(false);
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   const sessionIdRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -141,8 +143,16 @@ function Chat({ token }) {
     setInput('');
 
     try {
-      const body = { message: msg, model: selectedModel, history: historySnapshot };
+      const body = { 
+        message: msg, 
+        model: selectedModel, 
+        history: historySnapshot,
+        image_base64: image
+      };
       if (sessionIdRef.current) body.session_id = sessionIdRef.current;
+
+      setImage(null);
+      setImagePreview(null);
 
       const res = await fetch('http://localhost:8000/chat', {
         method: 'POST',
@@ -179,6 +189,19 @@ function Chat({ token }) {
   const handleStop = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
+    }
+  };
+
+  const handlePaste = (e) => {
+    const item = e.clipboardData.items[0];
+    if (item?.type?.startsWith('image/')) {
+      const file = item.getAsFile();
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImage(event.target.result.split(',')[1]); // Base64 only
+        setImagePreview(URL.createObjectURL(file));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -403,6 +426,14 @@ function Chat({ token }) {
 
         {/* Input Dock */}
         <div className={`chat-input-dock${isEmpty ? ' centered' : ''}`}>
+          {imagePreview && (
+            <div className="chat-image-preview-container">
+              <img src={imagePreview} alt="Preview" className="chat-image-preview" />
+              <button className="chat-image-preview-remove" onClick={() => { setImage(null); setImagePreview(null); }}>
+                <X size={12} />
+              </button>
+            </div>
+          )}
           <div className="chat-input-box">
             <VoiceInput
               onResult={(text) => setInput(prev => prev + ' ' + text)}
@@ -414,7 +445,8 @@ function Chat({ token }) {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-              placeholder="Ask your personal AI anything..."
+              onPaste={handlePaste}
+              placeholder="Ask anything or paste an image..."
               disabled={loading}
             />
             <button

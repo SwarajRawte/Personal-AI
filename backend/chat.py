@@ -13,9 +13,13 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 import google.generativeai as genai
+from PIL import Image
+import io
+import base64
 
 import models
 import rag
+import tools
 from huggingface_hub import InferenceClient
 from database import Base, engine
 from dependencies import get_db, get_current_user
@@ -73,6 +77,7 @@ class ChatRequest(BaseModel):
     model: str = "hcl"
     session_id: Optional[str] = None        # omit to start a new session
     history: List[HistoryMessage] = []      # previous turns from the frontend
+    image_base64: Optional[str] = None      # vision support
 
 class ChatResponse(BaseModel):
     response: str
@@ -80,6 +85,7 @@ class ChatResponse(BaseModel):
     rag_used: bool = False
     image_url: Optional[str] = None
     model_used: Optional[str] = None
+    search_used: bool = False
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -88,7 +94,7 @@ def _strip_think(text: str) -> str:
     return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
 
-def _build_system_prompt(note_snippets: list[str], chat_snippets: list[str]) -> str:
+def _build_system_prompt(note_snippets: list[str], chat_snippets: list[str], search_results: str = "") -> str:
     parts = [
         "You are a helpful personal AI assistant. "
         "Be concise, accurate, and friendly."
@@ -99,6 +105,8 @@ def _build_system_prompt(note_snippets: list[str], chat_snippets: list[str]) -> 
     if chat_snippets:
         parts.append("\n\n## Similar past conversations for context:\n" +
                      "\n---\n".join(chat_snippets))
+    if search_results:
+        parts.append("\n\n## Real-time Web Search Results:\n" + search_results)
     return "\n".join(parts)
 
 
@@ -155,7 +163,7 @@ def _call_huggingface_text(messages: list[dict], model_id: str) -> str:
         raise HTTPException(status_code=500, detail=f"HF Inference Error: {err_msg}")
 
 
-def _call_gemini(messages: list[dict], model_id: str) -> str:
+def _call_gemini(messages: list[dict], model_id: str, image_base64: Optional[str] = None) -> str:
     # Force reload of .env to pick up manual updates without server restart
     load_dotenv(dotenv_path=_env_path, override=True)
     api_key = os.environ.get("GOOGLE_API_KEY", "").strip()
@@ -165,14 +173,24 @@ def _call_gemini(messages: list[dict], model_id: str) -> str:
     try:
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel(model_id)
-        # Convert ChatML style history to Gemini style
+        
+        last_msg = messages[-1]["content"]
+        
+        # 1. Handle Multi-modal (Image + Text)
+        if image_base64:
+            # Note: Current Gemini SDK 'start_chat' does not support multi-modal history well.
+            # For vision tasks, we send the prompt + image as a single generation.
+            image_data = base64.b64decode(image_base64)
+            img = Image.open(io.BytesIO(image_data))
+            response = model.generate_content([last_msg, img])
+            return response.text
+            
+        # 2. Regular Text Chat (with history)
         history = []
         for msg in messages[:-1]:
             role = "user" if msg["role"] == "user" else "model"
             if role == "system": role = "user" # Gemini doesn't support system role in history well
             history.append({"role": role, "parts": [msg["content"]]})
-        
-        last_msg = messages[-1]["content"]
         
         chat = model.start_chat(history=history)
         response = chat.send_message(last_msg)
@@ -241,13 +259,26 @@ def chat_endpoint(
     if not entry:
         raise HTTPException(status_code=400, detail=f"Unknown model key: {request.model}")
 
-    # ── 1. RAG context retrieval ──────────────────────────────────────────────
+    # ── 1. RAG & Search context retrieval ──────────────────────────────────────────────
     note_snippets = rag.search_notes(request.message, current_user.id)
     chat_snippets = rag.search_chat_history(request.message, current_user.id)
+    
+    # ── Web Search Detection ────────────────────────────────────────────────
+    search_results = ""
+    search_used = False
+    
+    msg_lower = request.message.lower().strip()
+    search_kws = ["search", "latest", "news", "current", "today", "who is", "weather", "stock", "price"]
+    
+    if msg_lower.startswith("/search ") or any(kw in msg_lower for kw in search_kws):
+        query = msg_lower[8:].strip() if msg_lower.startswith("/search ") else request.message
+        search_results = tools.web_search(query)
+        search_used = True
+
     rag_used = bool(note_snippets or chat_snippets)
 
     # ── 2. Build message array (system + history + current user msg) ──────────
-    system_prompt = _build_system_prompt(note_snippets, chat_snippets)
+    system_prompt = _build_system_prompt(note_snippets, chat_snippets, search_results)
     messages: list[dict] = [{"role": "system", "content": system_prompt}]
     for h in request.history:
         messages.append({"role": h.role, "content": h.content})
@@ -281,7 +312,7 @@ def chat_endpoint(
             elif entry["provider"] == "hf":
                 reply = _call_huggingface_text(messages, entry["model_id"])
             elif entry["provider"] == "google":
-                reply = _call_gemini(messages, entry["model_id"])
+                reply = _call_gemini(messages, entry["model_id"], request.image_base64)
             else:
                 reply = _call_hcl(messages)
     except HTTPException:
@@ -320,6 +351,7 @@ def chat_endpoint(
         "response": reply,
         "session_id": session_id,
         "rag_used": rag_used,
+        "search_used": search_used,
         "image_url": image_url,
         "model_used": model_used
     }

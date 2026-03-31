@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Database, PlusCircle, Search, Trash2, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Database, PlusCircle, Search, Trash2, CheckCircle2, XCircle, Loader2, FileUp } from 'lucide-react';
 
 const API = 'http://localhost:8000/api/rag';
 
@@ -64,6 +64,36 @@ function KnowledgeBase({ token }) {
       setStatus(`error|${e.message}`);
     }
     setLoading(false);
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setLoading(true);
+    setStatus(`info|Uploading ${file.name}...`);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const r = await fetch('http://localhost:8000/api/rag/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }, // Form data handles content-type
+        body: formData,
+      });
+      const data = await r.json();
+      if (r.ok) {
+        setStatus(`success|Successfully uploaded and indexed ${file.name} (${data.chars} chars).`);
+        fetchStats();
+      } else {
+        setStatus(`error|${data.detail || 'Upload failed'}`);
+      }
+    } catch (err) {
+      setStatus(`error|${err.message}`);
+    }
+    setLoading(false);
+    e.target.value = ''; // Reset input
   };
 
   const handleClear = async () => {
@@ -135,6 +165,12 @@ function KnowledgeBase({ token }) {
         >
           <Search size={16} /> Search Knowledge
         </button>
+        <button
+          className={`kb-tab ${tab === 'upload' ? 'active' : ''}`}
+          onClick={() => { setTab('upload'); setStatus(''); }}
+        >
+          <FileUp size={16} /> Upload Documents
+        </button>
       </div>
 
       {tab === 'ingest' && (
@@ -191,6 +227,27 @@ function KnowledgeBase({ token }) {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {tab === 'upload' && (
+        <div className="kb-panel">
+          <div className="kb-upload-zone">
+            <FileUp size={48} className="kb-upload-icon" />
+            <h3>Drop or Select Document</h3>
+            <p className="kb-upload-desc">PDF, CSV, or TXT (Max 10MB)</p>
+            <input
+              type="file"
+              accept=".pdf,.csv,.txt"
+              onChange={handleFileUpload}
+              className="kb-file-input"
+              id="kb-file-upload"
+              disabled={loading}
+            />
+            <label htmlFor="kb-file-upload" className="kb-primary-btn">
+              {loading ? <Loader2 className="animate-spin" size={18} /> : 'Choose File'}
+            </label>
+          </div>
         </div>
       )}
 
