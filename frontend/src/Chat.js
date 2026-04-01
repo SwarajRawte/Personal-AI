@@ -129,7 +129,8 @@ function Chat({ token }) {
 
   const sendMessage = async (text) => {
     const msg = (text || input).trim();
-    if (!msg || loading) return;
+    if (!msg && !image) return;
+    if (loading) return;
 
     // Initialize AbortController for this request
     abortControllerRef.current = new AbortController();
@@ -193,20 +194,34 @@ function Chat({ token }) {
   };
 
   const handlePaste = (e) => {
-    const item = e.clipboardData.items[0];
-    if (item?.type?.startsWith('image/')) {
-      const file = item.getAsFile();
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setImage(event.target.result.split(',')[1]); // Base64 only
-        setImagePreview(URL.createObjectURL(file));
-      };
-      reader.readAsDataURL(file);
+    const items = (e.clipboardData || e.originalEvent.clipboardData)?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith('image/')) {
+            const file = items[i].getAsFile();
+            if (!file) continue;
+
+            // Prevent default behavior to avoid text-artifacts
+            e.preventDefault();
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const b64 = event.target.result.split(',')[1];
+                setImage(b64);
+                setImagePreview(URL.createObjectURL(file));
+                // Refocus for prompt typing
+                setTimeout(() => inputRef.current?.focus(), 50);
+            };
+            reader.readAsDataURL(file);
+            break; 
+        }
     }
   };
 
   const currentModel = MODEL_OPTIONS.find(m => m.value === selectedModel) || MODEL_OPTIONS[1];
   const isEmpty = messages.length === 0;
+  const canSend = input.trim() || image;
 
   return (
     <div className="chat-workspace">
@@ -452,7 +467,7 @@ function Chat({ token }) {
             <button
               className={`chat-send-btn ${loading ? 'stop-btn' : ''}`}
               onClick={() => loading ? handleStop() : sendMessage()}
-              disabled={!loading && !input.trim()}
+              disabled={!loading && !canSend}
             >
               {loading ? (
                 <Square size={14} fill="currentColor" strokeWidth={0} />

@@ -224,9 +224,13 @@ def _call_huggingface_image(prompt: str) -> str:
         raise HTTPException(status_code=500, detail=f"HF Image Error: {err_msg}")
 
 
-def _get_auto_model(message: str) -> str:
+def _get_auto_model(message: str, has_image: bool = False) -> str:
     """Intelligently route the request to the best model based on intent."""
     m = message.lower()
+    
+    # 0. Vision intent (Force Gemini if an image is provided)
+    if has_image:
+        return "google-gemini"
     
     # 1. Coding intent (Route to Groq for speed/reliability)
     code_kws = ["python", "javascript", "js", "ts", "typescript", "rust", "code", "function", "css", "html", "react", "java", "c++", "c#", "golang", "sql", "ruby", "php", "snippet", "repository"]
@@ -299,7 +303,7 @@ def chat_endpoint(
             # Handle Auto-Select if requested
             actual_model_key = request.model
             if request.model == "auto":
-                actual_model_key = _get_auto_model(request.message)
+                actual_model_key = _get_auto_model(request.message, bool(request.image_base64))
             
             entry = MODEL_REGISTRY.get(actual_model_key)
             model_used = entry["label"]
