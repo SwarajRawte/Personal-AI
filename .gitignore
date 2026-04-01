@@ -19,3 +19,4 @@ Thumbs.db
 # UI Artifacts
 backend/gen_*.png
 frontend/src/assets/gen_*.png
+*.db
