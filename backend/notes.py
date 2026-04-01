@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 import schemas, crud, models
 from dependencies import get_db, get_current_user
-import rag
+import rag, ai_utils
 
 router = APIRouter()
 
@@ -13,6 +13,10 @@ def create_note(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
+    # Automatically tag the note with AI
+    if not note.tags:
+        note.tags = ai_utils.get_ai_tags(note.title, note.content)
+        
     db_note = crud.create_user_note(db=db, note=note, user_id=current_user.id)
     # Index in RAG vector store
     rag.embed_and_upsert_note(db_note.id, db_note.title, db_note.content, current_user.id)

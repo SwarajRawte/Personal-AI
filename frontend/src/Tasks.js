@@ -29,6 +29,15 @@ function Tasks({ token }) {
     fetchTasks();
   };
 
+  const toggleTask = async (id, completed) => {
+    await fetch(`/tasks/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ completed }),
+    });
+    fetchTasks();
+  };
+
   const deleteTask = async (id) => {
     await fetch(`/tasks/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     fetchTasks();
@@ -56,9 +65,25 @@ function Tasks({ token }) {
           <div className="task-list">
             {tasks.map((task, i) => (
               <div key={task.id} className="task-item">
-                <div className="task-item-left">
-                  <div className="task-dot" style={{ background: COLORS[i % COLORS.length] }} />
-                  <span className="task-item-title">{task.title}</span>
+                <div className="task-info">
+                  <div className="flex-center" style={{ gap: '8px', justifyContent: 'flex-start' }}>
+                    <button 
+                      className={`task-check ${task.completed ? 'completed' : ''}`}
+                      onClick={() => toggleTask(task.id, !task.completed)}
+                    >
+                      <CheckCircle2 size={16} />
+                    </button>
+                    <span className={`task-item-title ${task.completed ? 'strikethrough' : ''}`}>
+                      {task.title}
+                    </span>
+                  </div>
+                  {task.priority && (
+                    <div style={{ marginLeft: '24px', marginTop: '4px' }}>
+                      <span className={`badge priority-${task.priority.toLowerCase()}`}>
+                        {task.priority}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <button className="delete-btn" onClick={() => deleteTask(task.id)}>
                   <Trash2 size={16} />

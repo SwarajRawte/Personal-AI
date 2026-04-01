@@ -21,6 +21,7 @@ from pydantic import BaseModel
 from dependencies import get_current_user
 import models
 import rag as rag_engine
+import notion_service
 
 router = APIRouter(prefix="/api/rag", tags=["rag-admin"])
 
@@ -39,6 +40,7 @@ class SearchResponse(BaseModel):
 class StatsResponse(BaseModel):
     notes_count: int
     chat_count: int
+    notion_count: int
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -49,9 +51,10 @@ def get_stats(current_user: models.User = Depends(get_current_user)):
     try:
         notes_total = rag_engine.notes_col.count()
         chat_total  = rag_engine.chat_col.count()
+        notion_total = rag_engine.notion_col.count()
     except Exception:
-        notes_total = chat_total = 0
-    return StatsResponse(notes_count=notes_total, chat_count=chat_total)
+        notes_total = chat_total = notion_total = 0
+    return StatsResponse(notes_count=notes_total, chat_count=chat_total, notion_count=notion_total)
 
 
 @router.post("/ingest")
@@ -135,15 +138,51 @@ async def upload_file(
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(exc)}")
 
+@router.post("/notion/sync")
+def sync_notion_workspace(current_user: models.User = Depends(get_current_user)):
+    """Fetch all shared Notion pages and re-index them into ChromaDB."""
+    if not notion_service.notion.is_active():
+        raise HTTPException(status_code=412, detail="NOTION_SECRET is not set in .env")
+    
+    try:
+        # 1. Search for all accessible pages
+        pages = notion_service.notion.search_accessible_pages()
+        if not pages:
+            return {"status": "ok", "synced": 0, "message": "No shared pages found. Make sure to 'Connect' your integration to Notion pages."}
+        
+        synced_count = 0
+        for p in pages:
+            content = notion_service.notion.get_page_content(p["id"])
+            if content:
+                rag_engine.upsert_notion_page(
+                    page_id=p["id"],
+                    title=p["title"],
+                    content=content,
+                    user_id=current_user.id
+                )
+                synced_count += 1
+        
+        return {"status": "ok", "synced": synced_count, "total_found": len(pages)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Notion sync failed: {str(e)}")
+
+
 @router.delete("/clear")
 def clear_knowledge(current_user: models.User = Depends(get_current_user)):
-    """Delete all manually-ingested and note-based embeddings for this user."""
+    """Delete all manually-ingested, note-based, and notion embeddings for this user."""
     try:
-        # Fetch all IDs that belong to this user in notes_col
-        all_items = rag_engine.notes_col.get(where={"user_id": current_user.id})
-        ids = all_items.get("ids", [])
-        if ids:
-            rag_engine.notes_col.delete(ids=ids)
-        return {"status": "ok", "deleted": len(ids)}
+        # 1. Clear Notes collection
+        all_notes = rag_engine.notes_col.get(where={"user_id": current_user.id})
+        n_ids = all_notes.get("ids", [])
+        if n_ids:
+            rag_engine.notes_col.delete(ids=n_ids)
+            
+        # 2. Clear Notion collection
+        all_notion = rag_engine.notion_col.get(where={"user_id": current_user.id})
+        notion_ids = all_notion.get("ids", [])
+        if notion_ids:
+            rag_engine.notion_col.delete(ids=notion_ids)
+            
+        return {"status": "ok", "deleted_notes": len(n_ids), "deleted_notion": len(notion_ids)}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))

@@ -37,18 +37,18 @@ body {
   z-index: 0;
   pointer-events: none;
   opacity: 0.04;
-  font-size: 25vw;
+  font-size: 20vw;
   font-weight: 800;
   letter-spacing: -0.05em;
   white-space: nowrap;
 }
 
 .bg-word-left {
-  transform: translateX(-5%);
+  transform: translateX(-15%);
 }
 
 .bg-word-right {
-  transform: translateX(5%);
+  transform: translateX(15%);
 }
 
 .landing-content {
@@ -150,6 +150,6 @@ body {
 @media (max-width: 768px) {
   .landing-title { font-size: 2.8rem; }
   .orb-container { width: 350px; height: 350px; margin-top: 3rem; }
-  .background-text { font-size: 30vw; flex-direction: column; text-align: center; gap: 2rem; }
+  .background-text { font-size: 22vw; flex-direction: column; text-align: center; gap: 2rem; }
   .bg-word-left, .bg-word-right { transform: none; }
 }

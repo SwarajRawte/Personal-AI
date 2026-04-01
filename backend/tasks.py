@@ -3,15 +3,19 @@ from sqlalchemy.orm import Session
 from typing import List
 import schemas, crud, models
 from dependencies import get_db, get_current_user
+import ai_utils
 
 router = APIRouter()
 
-@router.post("/tasks", response_model=schemas.Task)
 def create_task(
     task: schemas.TaskCreate, 
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(get_current_user)
 ):
+    # Determine AI Priority automatically
+    if not task.priority or task.priority == "Low":
+        task.priority = ai_utils.get_ai_priority(task.title, task.description)
+        
     return crud.create_user_task(db=db, task=task, user_id=current_user.id)
 
 @router.get("/tasks", response_model=List[schemas.Task])

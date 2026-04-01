@@ -2318,3 +2318,140 @@ body {
   transform: scale(1.15);
   background: #fb7185;
 }
+
+.task-check {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  width: 20px;
+  height: 20px;
+  color: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.task-check:hover {
+  border-color: var(--accent);
+  background: rgba(124, 58, 237, 0.05);
+}
+
+.task-check.completed {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.strikethrough {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+/* ─── Shared Smart UI Elements ────────────────────────────── */
+.badge {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.priority-high { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+.priority-medium { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+.priority-low { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.tag-pill {
+  padding: 2px 8px;
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid rgba(124, 58, 237, 0.15);
+  border-radius: 6px;
+  font-size: 0.72rem;
+  color: var(--accent-light);
+  font-weight: 500;
+}
+
+/* ─── Task Specific Tweaks ────────────────────────────────── */
+.task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255,255,255,0.03);
+  transition: all 0.2s;
+}
+
+.task-item:hover {
+  background: rgba(255,255,255,0.04);
+  transform: translateX(4px);
+}
+
+.task-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ─── Note Specific Tweaks ────────────────────────────────── */
+.note-item {
+  padding: 16px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255,255,255,0.03);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.note-item.expanded {
+  background: rgba(255,255,255,0.05);
+  border-color: var(--accent);
+  transform: none;
+}
+
+.note-content-expanded {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.note-add-form {
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Kortex Logo Styling -------------------------- */
+.sidebar-logo-img {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.2);
+}
+
+.sidebar-logo-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

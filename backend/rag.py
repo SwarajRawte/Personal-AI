@@ -41,6 +41,12 @@ chat_col = _client.get_or_create_collection(
     metadata={"hnsw:space": "cosine"},
 )
 
+notion_col = _client.get_or_create_collection(
+    name="notion_index",
+    embedding_function=_EMBED_FN,
+    metadata={"hnsw:space": "cosine"},
+)
+
 # ── Notes ─────────────────────────────────────────────────────────────────────
 
 def embed_and_upsert_note(note_id: int, title: str, content: str, user_id: int) -> None:
@@ -66,7 +72,7 @@ def delete_note_embedding(note_id: int) -> None:
         logger.warning("RAG notes delete failed: %s", exc)
 
 
-def search_notes(query: str, user_id: int, k: int = 3) -> list[str]:
+def search_notes(query: str, user_id: int, k: int = 5) -> list[str]:
     """Return up to k relevant note snippets for this user."""
     try:
         count = notes_col.count()
@@ -81,14 +87,26 @@ def search_notes(query: str, user_id: int, k: int = 3) -> list[str]:
         dist = results.get("distances", [[]])[0]
         
         # Filter by distance (relevance)
-        # Cosine distance: 0 is identical, 2 is opposite. 0.45 is a decent threshold.
+        # Cosine distance: 0 is identical, 2 is opposite. 0.5 is a decent balance.
         relevant_docs = []
         for d, doc in zip(dist, docs):
-            if doc and d < 0.45:
-                relevant_docs.append(doc[:600])
+            if doc and d < 0.5:
+                relevant_docs.append(doc[:800])
         return relevant_docs
     except Exception as exc:
         logger.warning("RAG notes search failed: %s", exc)
+        return []
+
+def get_all_notes(user_id: int) -> list[str]:
+    """Retrieve all notes for a user regardless of semantic similarity."""
+    try:
+        results = notes_col.get(
+            where={"user_id": user_id},
+            include=["documents"]
+        )
+        return results.get("documents", [])
+    except Exception as exc:
+        logger.warning("RAG get all notes failed: %s", exc)
         return []
 
 # ── Chat history ──────────────────────────────────────────────────────────────
@@ -127,4 +145,44 @@ def search_chat_history(query: str, user_id: int, k: int = 3) -> list[str]:
         return relevant_docs
     except Exception as exc:
         logger.warning("RAG chat history search failed: %s", exc)
+        return []
+
+# ── Notion Intelligence ──────────────────────────────────────────────────────
+
+def upsert_notion_page(page_id: str, title: str, content: str, user_id: int) -> None:
+    """Index Notion content. Safe to call on re-sync."""
+    text = f"NOTION PAGE: {title}\n\n{content}".strip()
+    if not text:
+        return
+    try:
+        notion_col.upsert(
+            ids=[f"notion-{page_id}"],
+            documents=[text],
+            metadatas=[{"user_id": user_id, "page_id": page_id, "title": title}],
+        )
+    except Exception as exc:
+        logger.warning("RAG notion upsert failed: %s", exc)
+
+def search_notion(query: str, user_id: int, k: int = 3) -> list[str]:
+    """Search your private Notion workspace for relevant context."""
+    try:
+        count = notion_col.count()
+        if count == 0:
+            return []
+        results = notion_col.query(
+            query_texts=[query],
+            n_results=min(k, count),
+            where={"user_id": user_id},
+        )
+        docs = results.get("documents", [[]])[0]
+        dist = results.get("distances", [[]])[0]
+        
+        relevant_docs = []
+        for d, doc in zip(dist, docs):
+            if doc and d < 0.45:
+                # Notion pages can be long, but we only want the relevant snippet
+                relevant_docs.append(doc[:1000])
+        return relevant_docs
+    except Exception as exc:
+        logger.warning("RAG notion search failed: %s", exc)
         return []

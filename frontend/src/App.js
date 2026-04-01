@@ -16,7 +16,7 @@ import './Dashboard.css';
 const GOOGLE_CLIENT_ID = "1076982736212-0fvtfej9mvdv5sanb818e4jsvh7h5cl0.apps.googleusercontent.com";
 
 const VIEW_TITLES = {
-  dashboard:     { icon: <LayoutDashboard size={18} />, label: 'PersonalAI' },
+  dashboard:     { icon: <LayoutDashboard size={18} />, label: 'Kortex' },
   chat:          { icon: <MessageSquare size={18} />,   label: 'AI Chat' },
   notes:         { icon: <FileText size={18} />,        label: 'Notes' },
   tasks:         { icon: <CheckSquare size={18} />,     label: 'Tasks' },

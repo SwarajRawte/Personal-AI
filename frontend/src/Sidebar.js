@@ -48,10 +48,10 @@ function Sidebar({ activeView, onNavigate }) {
       >
         {/* Logo */}
         <div className="sidebar-logo">
-          <div className="sidebar-logo-dot">
-            <Brain size={16} strokeWidth={2} />
+          <div className="sidebar-logo-img">
+            <img src="/logo_kortex.png" alt="Kortex Logo" />
           </div>
-          <span className="sidebar-logo-text">PersonalAI</span>
+          <span className="sidebar-logo-text">Kortex</span>
         </div>
 
         {/* Nav */}

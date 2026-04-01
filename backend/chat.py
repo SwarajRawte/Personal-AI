@@ -20,6 +20,7 @@ import base64
 import models
 import rag
 import tools
+import notion_service
 from huggingface_hub import InferenceClient
 from database import Base, engine
 from dependencies import get_db, get_current_user
@@ -94,14 +95,17 @@ def _strip_think(text: str) -> str:
     return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
 
-def _build_system_prompt(note_snippets: list[str], chat_snippets: list[str], search_results: str = "") -> str:
+def _build_system_prompt(note_snippets: list[str], chat_snippets: list[str], search_results: str = "", notion_snippets: list[str] = []) -> str:
     parts = [
-        "You are a helpful personal AI assistant. "
+        "You are Kortex, a high-intelligence personal assistant. "
         "Be concise, accurate, and friendly."
     ]
     if note_snippets:
         parts.append("\n\n## Relevant notes from the user's knowledge base:\n" +
                      "\n---\n".join(note_snippets))
+    if notion_snippets:
+        parts.append("\n\n## Documents from your Notion Workspace:\n" +
+                     "\n---\n".join(notion_snippets))
     if chat_snippets:
         parts.append("\n\n## Similar past conversations for context:\n" +
                      "\n---\n".join(chat_snippets))
@@ -264,14 +268,22 @@ def chat_endpoint(
         raise HTTPException(status_code=400, detail=f"Unknown model key: {request.model}")
 
     # ── 1. RAG & Search context retrieval ──────────────────────────────────────────────
-    note_snippets = rag.search_notes(request.message, current_user.id)
+    msg_lower = request.message.lower().strip()
+    
+    # Check for general intent to see all knowledge
+    list_notes_kws = ["what are my notes", "list all my notes", "show my notes", "what do i have in my notes", "all my notes"]
+    if any(kw in msg_lower for kw in list_notes_kws):
+        note_snippets = rag.get_all_notes(current_user.id)
+    else:
+        note_snippets = rag.search_notes(request.message, current_user.id)
+        
     chat_snippets = rag.search_chat_history(request.message, current_user.id)
+    notion_snippets = rag.search_notion(request.message, current_user.id)
     
     # ── Web Search Detection ────────────────────────────────────────────────
     search_results = ""
     search_used = False
     
-    msg_lower = request.message.lower().strip()
     search_kws = ["search", "latest", "news", "current", "today", "who is", "weather", "stock", "price"]
     
     if msg_lower.startswith("/search ") or any(kw in msg_lower for kw in search_kws):
@@ -279,10 +291,10 @@ def chat_endpoint(
         search_results = tools.web_search(query)
         search_used = True
 
-    rag_used = bool(note_snippets or chat_snippets)
+    rag_used = bool(note_snippets or chat_snippets or notion_snippets)
 
     # ── 2. Build message array (system + history + current user msg) ──────────
-    system_prompt = _build_system_prompt(note_snippets, chat_snippets, search_results)
+    system_prompt = _build_system_prompt(note_snippets, chat_snippets, search_results, notion_snippets)
     messages: list[dict] = [{"role": "system", "content": system_prompt}]
     for h in request.history:
         messages.append({"role": h.role, "content": h.content})

@@ -13,3 +13,4 @@ itsdangerous
 chromadb
 sentence-transformers
 google-generativeai
+notion-client

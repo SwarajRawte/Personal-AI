@@ -52,7 +52,7 @@ app.include_router(rag_admin.router)
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to PersonalAI backend!"}
+    return {"message": "Welcome to Kortex backend!"}
 
 @app.post("/signup", response_model=schemas.UserOut)
 def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
