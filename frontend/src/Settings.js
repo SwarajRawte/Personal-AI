@@ -8,7 +8,7 @@ function Settings() {
     <div className="settings-panel">
       <div className="glass-card">
         <div className="card-title">Settings</div>
-        <div className="card-subtitle">Customize your PersonalAI experience</div>
+        <div className="card-subtitle">Customize your Kortex experience</div>
 
         <div className="settings-group">
           <div className="settings-group-title">Appearance</div>

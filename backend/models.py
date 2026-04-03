@@ -19,6 +19,7 @@ class Task(Base):
     title = Column(String, index=True)
     description = Column(String, default="")
     completed = Column(Boolean, default=False)
+    priority = Column(String, default="Low") # High, Medium, Low
     user_id = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="tasks")
@@ -28,6 +29,7 @@ class Note(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
     content = Column(String)
+    tags = Column(String, default="") # Comma-separated AI tags
     user_id = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="notes")

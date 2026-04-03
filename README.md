@@ -1,18 +1,20 @@
-# 🌌 PersonalAI: Your Intelligence Dashboard
+# 🌌 Kortex: Your Intelligence Dashboard
+
+![Kortex Logo](file:///C:/Users/Swarajmadhukar.Rawte/Downloads/PersonalAI/PersonalAI/frontend/public/logo_kortex.png)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![Gemini](https://img.shields.io/badge/Gemini-8E75B2?style=flat&logo=googlegemini&logoColor=white)](https://deepmind.google/technologies/gemini/)
 
-PersonalAI is a state-of-the-art, multi-modal intelligence hub designed to streamline your digital life. It combines high-performance LLMs, vector-based long-term memory, and real-time internet research into a premium, glassmorphic dashboard.
+Kortex is a state-of-the-art, multi-modal intelligence hub designed to streamline your digital life. It combines high-performance LLMs, vector-based long-term memory, and real-time internet research into a premium, glassmorphic dashboard.
 
 ---
 
 ## ✨ Specialized Intelligence Features
 
 ### 🧠 Unified Long-Term Memory (RAG)
-PersonalAI doesn't just "chat"—it remembers. Using **ChromaDB**, every conversation is indexed and retrieved in real-time, providing deep context-awareness for your ongoing projects and personal notes.
+Kortex doesn't just "chat"—it remembers. Using **ChromaDB**, every conversation is indexed and retrieved in real-time, providing deep context-awareness for your ongoing projects and personal notes.
 
 ### 🖼️ Multi-Modal Vision
 Integrated with **Google Gemini 1.5 Flash**, the dashboard supports seamless image analysis. 
@@ -85,7 +87,7 @@ npm start
 ---
 
 ## 🙌 Contribute
-Feel free to open issues or submit PRs to enhance the PersonalAI ecosystem. Let's build the future of personal intelligence together!
+Feel free to open issues or submit PRs to enhance the Kortex ecosystem. Let's build the future of personal intelligence together!
 
 ---
 Developed with ❤️ by [Swaraj Rawte](https://github.com/SwarajRawte)

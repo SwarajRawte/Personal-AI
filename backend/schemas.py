@@ -19,6 +19,7 @@ class TaskBase(BaseModel):
     title: str
     description: Optional[str] = ""
     completed: Optional[bool] = False
+    priority: Optional[str] = "Low"
 
 class TaskCreate(TaskBase):
     pass
@@ -33,6 +34,7 @@ class Task(TaskBase):
 class NoteBase(BaseModel):
     title: str
     content: str
+    tags: Optional[str] = ""
 
 class NoteCreate(NoteBase):
     pass
