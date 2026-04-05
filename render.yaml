@@ -5,9 +5,8 @@ services:
   - type: web
     name: kortex-backend
     env: python
-    rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn main:app -k uvicorn.workers.UvicornWorker
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: gunicorn -b 0.0.0.0:$PORT --chdir backend main:app -k uvicorn.workers.UvicornWorker
     plan: free # Use the free tier
     envVars:
       - key: DATABASE_URL
