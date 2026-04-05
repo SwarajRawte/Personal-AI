@@ -7,10 +7,10 @@ function CalendarConnect() {
       <p className="db-card-subtitle">Sync your calendar to stay on top of events.</p>
       <div className="db-cal-buttons">
         <a href="/calendar/google/login" className="db-cal-btn">
-          <span>📅</span> Google Calendar
+          <span></span> Google Calendar
         </a>
         <a href="/calendar/outlook/login" className="db-cal-btn">
-          <span>📆</span> Connect Outlook Calendar
+          <span></span> Connect Outlook Calendar
         </a>
       </div>
     </div>

@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Trash2, Plus, Loader2 } from 'lucide-react';
+import { FileText, Trash2, Plus, Loader2, Sparkles, Database } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getApiUrl } from './api';
 
 function Notes({ token }) {
   const [notes, setNotes] = useState([]);
@@ -11,138 +13,201 @@ function Notes({ token }) {
   const fetchNotes = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/notes', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(getApiUrl('/notes'), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) setNotes(await res.json());
-    } catch (e) { console.error('Notes fetch:', e); }
+    } catch (e) {
+      console.error('Notes fetch:', e);
+    }
     setLoading(false);
   };
 
-  useEffect(() => { fetchNotes(); }, []);
+  useEffect(() => {
+    fetchNotes();
+  }, [token]);
 
   const addNote = async (e) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
-    await fetch('/notes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ title, content }),
-    });
-    setTitle('');
-    setContent('');
-    fetchNotes();
+    setLoading(true);
+    try {
+      await fetch(getApiUrl('/notes'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ title, content }),
+      });
+      setTitle('');
+      setContent('');
+      fetchNotes();
+    } catch (e) {
+      console.error('Add note error:', e);
+    }
+    setLoading(false);
   };
 
   const deleteNote = async (id) => {
-    await fetch(`/notes/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
-    fetchNotes();
+    try {
+      await fetch(getApiUrl(`/notes/${id}`), { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      fetchNotes();
+    } catch (e) {
+      console.error('Delete note error:', e);
+    }
+  };
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1 }
   };
 
   return (
-    <div className="notes-panel">
-      <div className="glass-card">
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="notes-panel"
+    >
+      <div className="glass-card premium-card">
         <div className="task-header">
-          <div className="card-title">My Knowledge Base</div>
-          <span className="task-count">{notes.length} items</span>
+          <div className="flex-center" style={{ gap: '12px' }}>
+            <div className="feature-icon-mini">
+              <Database size={20} className="glow-icon" />
+            </div>
+            <div>
+              <div className="card-title">Knowledge Nexus</div>
+              <div className="card-subtitle">Stored insights & neural context</div>
+            </div>
+          </div>
+          <span className="task-count">{notes.length} Fragments</span>
         </div>
 
-        {loading ? (
-          <div className="flex-center" style={{ padding: '20px' }}>
-            <Loader2 className="animate-spin" size={20} />
+        <div className="search-filter-bar" style={{ marginBottom: '20px' }}>
+           <div className="glass-search-input">
+              <Sparkles size={16} className="search-sparkle" />
+              <input type="text" placeholder="Synthesize from memory..." disabled />
+           </div>
+        </div>
+
+        {loading && notes.length === 0 ? (
+          <div className="flex-center" style={{ padding: '60px' }}>
+            <Loader2 className="animate-spin glow-icon" size={32} />
           </div>
         ) : notes.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', padding: '12px 0', textAlign: 'center' }}>
-            Your memory is empty. Start adding knowledge below!
-          </p>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="empty-state"
+          >
+            <div className="empty-icon-ring">
+              <FileText size={40} opacity={0.2} />
+            </div>
+            <p>Your neural lattice is empty. Begin recording data fragments below.</p>
+          </motion.div>
         ) : (
-          <div className="task-list">
-            {notes.map((note) => (
-              <div 
-                key={note.id} 
-                className={`note-item ${expandedNote === note.id ? 'expanded' : ''}`}
-                onClick={() => setExpandedNote(expandedNote === note.id ? null : note.id)}
-              >
-                <div 
-                  className="flex-between" 
-                  style={{ width: '100%', alignItems: 'flex-start' }}
+          <div className="note-grid">
+            <AnimatePresence mode="popLayout">
+              {notes.map((note) => (
+                <motion.div 
+                  key={note.id} 
+                  variants={itemVariants}
+                  layout
+                  className={`note-card glass-item ${expandedNote === note.id ? 'expanded' : ''}`}
+                  onClick={() => setExpandedNote(expandedNote === note.id ? null : note.id)}
+                  whileHover={{ scale: 1.01, backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
                 >
-                  <div className="task-info">
-                    <div className="flex-center" style={{ gap: '8px', justifyContent: 'flex-start' }}>
-                      <span className="note-icon" style={{ color: 'var(--accent-light)' }}>
-                        <FileText size={16} />
-                      </span>
-                      <span className="note-title" style={{ fontWeight: '600', fontSize: '0.9rem' }}>
-                        {note.title}
-                      </span>
+                  <div className="flex-between" style={{ width: '100%', alignItems: 'center' }}>
+                    <div className="note-header-info">
+                      <div className="flex-center" style={{ gap: '10px', justifyContent: 'flex-start' }}>
+                        <span className="note-indicator" />
+                        <span className="note-title-text">{note.title}</span>
+                      </div>
+                    </div>
+                    <div className="note-actions">
+                       <button 
+                        className="note-delete-btn" 
+                        onClick={(e) => { e.stopPropagation(); deleteNote(note.id); }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
-                  <button 
-                    className="delete-btn" 
-                    onClick={(e) => { e.stopPropagation(); deleteNote(note.id); }}
-                    style={{ opacity: 0.6 }}
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
 
-                {expandedNote === note.id && (
-                  <div className="note-content-expanded">
-                    <p style={{ margin: '12px 0', whiteSpace: 'pre-wrap' }}>{note.content}</p>
-                    {note.tags && (
-                      <div className="tag-cloud">
-                        {note.tags.split(',').map((tag, idx) => (
-                          <span key={idx} className="tag-pill">
-                            {tag.trim()}
-                          </span>
-                        ))}
-                      </div>
+                  <AnimatePresence>
+                    {expandedNote === note.id && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "circOut" }}
+                        className="note-content-area"
+                      >
+                        <div className="divider" style={{ margin: '15px 0' }} />
+                        <p className="note-body-text">{note.content}</p>
+                        
+                        {note.tags && (
+                          <div className="note-tag-row">
+                            {note.tags.split(',').map((tag, idx) => (
+                              <span key={idx} className="neural-tag">
+                                {tag.trim()}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </motion.div>
                     )}
-                  </div>
-                )}
-                
-                {expandedNote !== note.id && note.tags && (
-                   <div style={{ marginLeft: '24px', opacity: 0.7 }}>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--accent-light)' }}>
-                        AI Tags: {note.tags}
-                      </span>
-                   </div>
-                )}
-              </div>
-            ))}
+                  </AnimatePresence>
+                  
+                  {expandedNote !== note.id && note.tags && (
+                     <div className="note-mini-tags">
+                        <Sparkles size={10} style={{ marginRight: '5px' }} />
+                        <span>{note.tags.split(',')[0]}...</span>
+                     </div>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
 
-        <form onSubmit={addNote} className="note-add-form" style={{ marginTop: '24px' }}>
-          <input
-            className="task-add-input"
-            style={{ marginBottom: '8px', background: 'rgba(255,255,255,0.03)' }}
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder="Note Title..."
-          />
-          <textarea
-            className="task-add-input"
-            style={{ 
-              minHeight: '80px', 
-              padding: '12px', 
-              borderRadius: '12px',
-              resize: 'vertical',
-              fontSize: '0.85rem',
-              background: 'rgba(255,255,255,0.03)'
-            }}
-            value={content}
-            onChange={e => setContent(e.target.value)}
-            placeholder="Add detailed information here so the AI can recall it in chat..."
-          />
-          <button 
-            type="submit" 
-            className="task-add-btn" 
-            style={{ width: '100%', marginTop: '8px', borderRadius: '12px' }}
-          >
-            <Plus size={18} style={{ marginRight: '6px' }} /> Save to Knowledge Base
-          </button>
+        <form onSubmit={addNote} className="neural-form-dock">
+          <div className="form-inner">
+            <input
+              className="neural-input-title"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="Insight Title"
+              required
+            />
+            <textarea
+              className="neural-input-body"
+              value={content}
+              onChange={e => setContent(e.target.value)}
+              placeholder="Describe the knowledge fragment..."
+              required
+            />
+            <button 
+              type="submit" 
+              className="neural-submit-btn" 
+              disabled={loading || !title.trim() || !content.trim()}
+            >
+              {loading ? <Loader2 className="animate-spin" size={18} /> : (
+                <>
+                  <Plus size={18} style={{ marginRight: '8px' }} />
+                  Record to Nexus
+                </>
+              )}
+            </button>
+          </div>
         </form>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
