@@ -37,25 +37,26 @@ function App() {
   let content;
 
   if (user) {
-    const userLabel = user.access_token || user.username || 'User';
+    const displayUser = user.username || 'User';
+    const authToken = user.access_token;
     const viewInfo = VIEW_TITLES[activeView] || VIEW_TITLES.dashboard;
 
     let viewContent;
     switch (activeView) {
       case 'chat':
-        viewContent = <ErrorBoundary name="Chat"><Chat token={userLabel} /></ErrorBoundary>;
+        viewContent = <ErrorBoundary name="Chat"><Chat token={authToken} /></ErrorBoundary>;
         break;
       case 'tasks':
-        viewContent = <ErrorBoundary name="Tasks"><Tasks token={userLabel} /></ErrorBoundary>;
+        viewContent = <ErrorBoundary name="Tasks"><Tasks token={authToken} /></ErrorBoundary>;
         break;
       case 'notes':
-        viewContent = <ErrorBoundary name="Notes"><Notes token={userLabel} /></ErrorBoundary>;
+        viewContent = <ErrorBoundary name="Notes"><Notes token={authToken} /></ErrorBoundary>;
         break;
       case 'settings':
         viewContent = <ErrorBoundary name="Settings"><Settings /></ErrorBoundary>;
         break;
       case 'knowledgebase':
-        viewContent = <ErrorBoundary name="KnowledgeBase"><KnowledgeBase token={userLabel} /></ErrorBoundary>;
+        viewContent = <ErrorBoundary name="KnowledgeBase"><KnowledgeBase token={authToken} /></ErrorBoundary>;
         break;
       default:
         viewContent = <ErrorBoundary name="Dashboard"><Dashboard user={user} onNavigate={setActiveView} /></ErrorBoundary>;
@@ -77,7 +78,7 @@ function App() {
             {viewInfo.label}
           </div>
           <div className="topbar-right">
-            <span className="topbar-email">{userLabel}</span>
+            <span className="topbar-email">{displayUser}</span>
             <button className="topbar-logout" onClick={() => { setUser(null); setActiveView('dashboard'); }}>
               <LogOut size={16} /> Logout
             </button>
