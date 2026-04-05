@@ -21,31 +21,34 @@ logger = logging.getLogger(__name__)
 # ── Persistent storage path ───────────────────────────────────────────────────
 _DB_PATH = str(Path(__file__).parent / "chroma_db")
 
-# ── Embedding model (downloaded once, cached locally) ────────────────────────
-_EMBED_FN = embedding_functions.SentenceTransformerEmbeddingFunction(
-    model_name="all-MiniLM-L6-v2"
-)
+# ── Embedding model (Lazy Load) ───────────────────────────────────────────────
+_EMBED_FN = None
 
-# ── ChromaDB client + collections ─────────────────────────────────────────────
+def get_embedding_fn():
+    global _EMBED_FN
+    if _EMBED_FN is None:
+        logger.info("Initializing SentenceTransformer model (all-MiniLM-L6-v2)...")
+        _EMBED_FN = embedding_functions.SentenceTransformerEmbeddingFunction(
+            model_name="all-MiniLM-L6-v2"
+        )
+    return _EMBED_FN
+
+# ── ChromaDB client ───────────────────────────────────────────────────────────
 _client = chromadb.PersistentClient(path=_DB_PATH)
 
-notes_col = _client.get_or_create_collection(
-    name="notes_index",
-    embedding_function=_EMBED_FN,
-    metadata={"hnsw:space": "cosine"},
-)
+def get_collection(name: str):
+    """Retrieve collection with the appropriate embedding function."""
+    return _client.get_or_create_collection(
+        name=name,
+        embedding_function=get_embedding_fn(),
+        metadata={"hnsw:space": "cosine"},
+    )
 
-chat_col = _client.get_or_create_collection(
-    name="chat_history_index",
-    embedding_function=_EMBED_FN,
-    metadata={"hnsw:space": "cosine"},
-)
-
-notion_col = _client.get_or_create_collection(
-    name="notion_index",
-    embedding_function=_EMBED_FN,
-    metadata={"hnsw:space": "cosine"},
-)
+def init_collections():
+    """Warms up the collections and downloads models if necessary."""
+    get_collection("notes_index")
+    get_collection("chat_history_index")
+    get_collection("notion_index")
 
 # ── Notes ─────────────────────────────────────────────────────────────────────
 
@@ -55,7 +58,8 @@ def embed_and_upsert_note(note_id: int, title: str, content: str, user_id: int) 
     if not text:
         return
     try:
-        notes_col.upsert(
+        col = get_collection("notes_index")
+        col.upsert(
             ids=[f"note-{note_id}"],
             documents=[text],
             metadatas=[{"user_id": user_id, "note_id": note_id, "title": title}],
@@ -67,7 +71,8 @@ def embed_and_upsert_note(note_id: int, title: str, content: str, user_id: int) 
 def delete_note_embedding(note_id: int) -> None:
     """Remove a note from the vector index."""
     try:
-        notes_col.delete(ids=[f"note-{note_id}"])
+        col = get_collection("notes_index")
+        col.delete(ids=[f"note-{note_id}"])
     except Exception as exc:
         logger.warning("RAG notes delete failed: %s", exc)
 
@@ -75,10 +80,11 @@ def delete_note_embedding(note_id: int) -> None:
 def search_notes(query: str, user_id: int, k: int = 5) -> list[str]:
     """Return up to k relevant note snippets for this user."""
     try:
-        count = notes_col.count()
+        col = get_collection("notes_index")
+        count = col.count()
         if count == 0:
             return []
-        results = notes_col.query(
+        results = col.query(
             query_texts=[query],
             n_results=min(k, count),
             where={"user_id": user_id},
@@ -100,7 +106,8 @@ def search_notes(query: str, user_id: int, k: int = 5) -> list[str]:
 def get_all_notes(user_id: int) -> list[str]:
     """Retrieve all notes for a user regardless of semantic similarity."""
     try:
-        results = notes_col.get(
+        col = get_collection("notes_index")
+        results = col.get(
             where={"user_id": user_id},
             include=["documents"]
         )
@@ -115,7 +122,8 @@ def upsert_chat_turn(msg_id: int, user_msg: str, assistant_msg: str, user_id: in
     """Store a completed Q&A turn so it can be retrieved as few-shot context."""
     text = f"User: {user_msg}\nAssistant: {assistant_msg}"
     try:
-        chat_col.upsert(
+        col = get_collection("chat_history_index")
+        col.upsert(
             ids=[f"chat-{msg_id}"],
             documents=[text],
             metadatas=[{"user_id": user_id}],
@@ -127,10 +135,11 @@ def upsert_chat_turn(msg_id: int, user_msg: str, assistant_msg: str, user_id: in
 def search_chat_history(query: str, user_id: int, k: int = 3) -> list[str]:
     """Return up to k past Q&A turns similar to the current query."""
     try:
-        count = chat_col.count()
+        col = get_collection("chat_history_index")
+        count = col.count()
         if count == 0:
             return []
-        results = chat_col.query(
+        results = col.query(
             query_texts=[query],
             n_results=min(k, count),
             where={"user_id": user_id},
@@ -155,7 +164,8 @@ def upsert_notion_page(page_id: str, title: str, content: str, user_id: int) -> 
     if not text:
         return
     try:
-        notion_col.upsert(
+        col = get_collection("notion_index")
+        col.upsert(
             ids=[f"notion-{page_id}"],
             documents=[text],
             metadatas=[{"user_id": user_id, "page_id": page_id, "title": title}],
@@ -166,10 +176,11 @@ def upsert_notion_page(page_id: str, title: str, content: str, user_id: int) -> 
 def search_notion(query: str, user_id: int, k: int = 3) -> list[str]:
     """Search your private Notion workspace for relevant context."""
     try:
-        count = notion_col.count()
+        col = get_collection("notion_index")
+        count = col.count()
         if count == 0:
             return []
-        results = notion_col.query(
+        results = col.query(
             query_texts=[query],
             n_results=min(k, count),
             where={"user_id": user_id},

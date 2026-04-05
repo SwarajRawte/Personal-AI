@@ -9,21 +9,40 @@ from google.auth.transport import requests as google_requests
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 import os
+import logging
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class GoogleToken(BaseModel):
     token: str
 
 GOOGLE_CLIENT_ID = "1076982736212-0fvtfej9mvdv5sanb818e4jsvh7h5cl0.apps.googleusercontent.com"
 
-
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-import chat, tasks, notes, calendar_oauth, rag_admin, auth_utils
-
-models.Base.metadata.create_all(bind=database.engine)
+import chat, tasks, notes, calendar_oauth, rag_admin, auth_utils, rag, models
 
 
-app = FastAPI()
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Initialize DB and warm up RAG collections
+    logger.info("Starting Kortex Backend...")
+    try:
+        models.Base.metadata.create_all(bind=database.engine)
+        # Process heavy RAG initialization in a background task or just call it here 
+        # (since we are already in lifespan, it won't block the port binding check)
+        rag.init_collections()
+    except Exception as e:
+        logger.error(f"Startup error: {e}")
+    yield
+    # Shutdown logic (if any)
+    logger.info("Shutting down Kortex Backend...")
+
+app = FastAPI(lifespan=lifespan)
 
 # Mount static files directory
 static_dir = os.path.join(os.path.dirname(__file__), "static")
