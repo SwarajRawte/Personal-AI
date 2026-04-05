@@ -1,7 +1,5 @@
-/**
- * Render Blueprint Specification
- * Used for automated deployment of the Kortex backend.
- */
+# Render Blueprint Specification
+# Used for automated deployment of the Kortex backend.
 
 services:
   - type: web
