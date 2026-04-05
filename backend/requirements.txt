@@ -14,5 +14,3 @@ chromadb
 sentence-transformers
 google-generativeai
 notion-client
-psycopg2-binary
-python-dotenv

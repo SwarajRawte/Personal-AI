@@ -10,7 +10,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import VoiceInput from './VoiceInput';
 import robotImg from './assets/ai-modern.png';
-import { getApiUrl } from './api';
+import { getEndpoint } from './config';
 
 const EXAMPLE_PROMPTS = [
   { icon: FileText, label: 'Summarize my notes', desc: 'Get a quick overview' },
@@ -51,7 +51,7 @@ const Chat = ({ token }) => {
 
   const fetchSessions = async () => {
     try {
-      const res = await fetch(getApiUrl('/chat/sessions'), {
+      const res = await fetch(getEndpoint('/chat/sessions'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) setSessions(await res.json());
@@ -62,7 +62,7 @@ const Chat = ({ token }) => {
     if (loading) return;
     setLoading(true);
     try {
-      const res = await fetch(getApiUrl(`/chat/sessions/${sessionId}`), {
+      const res = await fetch(getEndpoint(`/chat/sessions/${sessionId}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -109,7 +109,7 @@ const Chat = ({ token }) => {
       };
       if (sessionIdRef.current) body.session_id = sessionIdRef.current;
 
-      const res = await fetch(getApiUrl('/chat'), {
+      const res = await fetch(getEndpoint('/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(body),

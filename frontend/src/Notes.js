@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FileText, Trash2, Plus, Loader2, Sparkles, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getApiUrl } from './api';
+import { getEndpoint } from './config';
 
 function Notes({ token }) {
   const [notes, setNotes] = useState([]);
@@ -13,7 +13,7 @@ function Notes({ token }) {
   const fetchNotes = async () => {
     setLoading(true);
     try {
-      const res = await fetch(getApiUrl('/notes'), { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(getEndpoint('/notes'), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) setNotes(await res.json());
     } catch (e) {
       console.error('Notes fetch:', e);
@@ -30,7 +30,7 @@ function Notes({ token }) {
     if (!title.trim() || !content.trim()) return;
     setLoading(true);
     try {
-      await fetch(getApiUrl('/notes'), {
+      await fetch(getEndpoint('/notes'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ title, content }),
@@ -46,7 +46,7 @@ function Notes({ token }) {
 
   const deleteNote = async (id) => {
     try {
-      await fetch(getApiUrl(`/notes/${id}`), { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      await fetch(getEndpoint(`/notes/${id}`), { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
       fetchNotes();
     } catch (e) {
       console.error('Delete note error:', e);

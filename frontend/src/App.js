@@ -15,7 +15,7 @@ import { LayoutDashboard, MessageSquare, FileText, CheckSquare, Settings as Sett
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import './Dashboard.css';
 
-const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "1076982736212-0fvtfej9mvdv5sanb818e4jsvh7h5cl0.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "1076982736212-0fvtfej9mvdv5sanb818e4jsvh7h5cl0.apps.googleusercontent.com";
 
 const VIEW_TITLES = {
   dashboard:     { icon: <LayoutDashboard size={18} />, label: 'Kortex' },

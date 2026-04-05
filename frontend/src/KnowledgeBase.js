@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Database, PlusCircle, Search, Trash2, CheckCircle2, XCircle, Loader2, FileUp, Sparkles, Activity, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getEndpoint } from './config';
 
-import { getApiUrl } from './api';
+const API = getEndpoint('/api/rag');
 
 function KnowledgeBase({ token }) {
   const [stats, setStats]       = useState({ notes_count: 0, chat_count: 0 });
@@ -18,7 +19,7 @@ function KnowledgeBase({ token }) {
 
   const fetchStats = useCallback(async () => {
     try {
-      const r = await fetch(getApiUrl('/api/rag/stats'), { headers });
+      const r = await fetch(`${API}/stats`, { headers });
       if (r.ok) setStats(await r.json());
     } catch (_) {}
   }, [token]); 
@@ -30,7 +31,7 @@ function KnowledgeBase({ token }) {
     setLoading(true);
     setStatus('');
     try {
-      const r = await fetch(getApiUrl('/api/rag/ingest'), {
+      const r = await fetch(`${API}/ingest`, {
         method: 'POST', headers,
         body: JSON.stringify({ text: ingestText, label: label || 'manual' }),
       });
@@ -54,7 +55,7 @@ function KnowledgeBase({ token }) {
     setLoading(true);
     setResults([]);
     try {
-      const r = await fetch(getApiUrl(`/api/rag/search?q=${encodeURIComponent(query)}&k=5`), { headers });
+      const r = await fetch(`${API}/search?q=${encodeURIComponent(query)}&k=5`, { headers });
       if (r.ok) {
         const data = await r.json();
         setResults(data.results);
@@ -78,7 +79,7 @@ function KnowledgeBase({ token }) {
     formData.append('file', file);
 
     try {
-      const r = await fetch(getApiUrl('/api/rag/upload'), {
+      const r = await fetch(getEndpoint('/api/rag/upload'), {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -101,7 +102,7 @@ function KnowledgeBase({ token }) {
     if (!window.confirm('Clear ALL knowledge base data for your account? This cannot be undone.')) return;
     setLoading(true);
     try {
-      const r = await fetch(getApiUrl('/api/rag/clear'), { method: 'DELETE', headers });
+      const r = await fetch(`${API}/clear`, { method: 'DELETE', headers });
       const data = await r.json();
       if (r.ok) {
         setStatus(`success|Cleared ${data.deleted} item(s).`);

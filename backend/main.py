@@ -8,16 +8,12 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
-from dotenv import load_dotenv
-
-load_dotenv()
+import os
 
 class GoogleToken(BaseModel):
     token: str
 
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "1076982736212-0fvtfej9mvdv5sanb818e4jsvh7h5cl0.apps.googleusercontent.com")
-SESSION_SECRET_KEY = os.getenv("SESSION_SECRET_KEY", "personal-ai-secret-key-123")
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+GOOGLE_CLIENT_ID = "1076982736212-0fvtfej9mvdv5sanb818e4jsvh7h5cl0.apps.googleusercontent.com"
 
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,13 +33,13 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 # Added for OAuth state management
-app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET_KEY)
+app.add_middleware(SessionMiddleware, secret_key="personal-ai-secret-key-123")
 
 from database import SessionLocal
 from dependencies import get_db, get_current_user
@@ -54,9 +50,14 @@ app.include_router(notes.router)
 app.include_router(calendar_oauth.router)
 app.include_router(rag_admin.router)
 
+@app.get("/api/health")
+def health_check():
+    return {"status": "healthy", "service": "kortex-backend"}
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Kortex backend!"}
+
 
 @app.post("/signup", response_model=schemas.UserOut)
 def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
