@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import NeuralBackground from './NeuralBackground';
 import './LandingPage.css';
 
 const LandingPage = ({ onGetStarted }) => {
@@ -21,6 +22,7 @@ const LandingPage = ({ onGetStarted }) => {
 
   return (
     <div className="bg-transparent text-on-background font-body selection:bg-primary/30 antialiased min-h-screen relative overflow-x-hidden">
+      <NeuralBackground />
       {/* TopNavBar */}
       <motion.nav 
         initial={{ y: -100 }}

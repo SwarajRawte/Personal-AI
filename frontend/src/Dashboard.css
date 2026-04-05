@@ -1612,6 +1612,9 @@ body {
   line-height: 1.65;
   font-size: 1rem;
   position: relative;
+  max-width: 85%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .chat-msg-bubble--ai {
@@ -1988,6 +1991,8 @@ body {
   font-size: 0.92rem;
   line-height: 1.5;
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .chat-bubble.user {

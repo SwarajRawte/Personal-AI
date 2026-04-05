@@ -6,8 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 # Support PostgreSQL (Render/Supabase) or SQLite (Local)
-# Priority: DB_EXTERNAL_URL (for cross-region) -> DATABASE_URL (standard) -> SQLite (local)
-SQLALCHEMY_DATABASE_URL = os.getenv("DB_EXTERNAL_URL") or os.getenv("DATABASE_URL") or "sqlite:///./test.db"
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
 
 # Fix for Render/Heroku 'postgres://' vs SQLAlchmey 'postgresql://'
 if SQLALCHEMY_DATABASE_URL and SQLALCHEMY_DATABASE_URL.startswith("postgres://"):

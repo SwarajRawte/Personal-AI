@@ -13,19 +13,19 @@ const NeuralBackground = () => {
           <ambientLight intensity={0.3} />
           <pointLight position={[10, 10, 10]} intensity={0.5} />
           
-          <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.8}>
-            <Sphere args={[1, 64, 64]} scale={2}>
+          <Float speed={1} rotationIntensity={0.2} floatIntensity={0.5}>
+            <Sphere args={[1, 64, 64]} scale={1.5}>
               <MeshDistortMaterial
                 color="#ca98ff"
-                speed={2}
-                distort={0.3}
+                speed={1.5}
+                distort={0.25}
                 radius={1}
                 emissive="#ca98ff"
-                emissiveIntensity={0.2}
+                emissiveIntensity={0.15}
                 roughness={0.4}
                 metalness={0.6}
                 transparent
-                opacity={0.8}
+                opacity={0.6}
               />
             </Sphere>
           </Float>

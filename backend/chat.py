@@ -12,7 +12,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from PIL import Image
 import io
 import base64
@@ -63,7 +64,7 @@ MODEL_REGISTRY = {
     "hf-deepseek-coder": {"provider": "hf",   "model_id": "deepseek-ai/DeepSeek-Coder-V2-Lite-Instruct", "label": "DeepSeek Coder (HF)"},
     "hf-mistral":        {"provider": "hf",   "model_id": "mistralai/Mistral-7B-Instruct-v0.3",       "label": "Mistral 7B (HF)"},
     "hf-flux":           {"provider": "hf-img", "model_id": "black-forest-labs/FLUX.1-schnell",       "label": "FLUX.1 Image (HF)"},
-    "google-gemini":     {"provider": "google", "model_id": "gemini-2.5-flash",              "label": "Gemini 2.5 Flash"},
+    "google-gemini":     {"provider": "google", "model_id": "gemini-1.5-flash",              "label": "Gemini 1.5 Flash"},
     "auto":              {"provider": "auto",   "model_id": "dynamic",                               "label": "Auto Select"},
 }
 
@@ -175,29 +176,37 @@ def _call_gemini(messages: list[dict], model_id: str, image_base64: Optional[str
         raise HTTPException(status_code=500, detail="GOOGLE_API_KEY is missing or invalid in backend/.env")
     
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(model_id)
+        client = genai.Client(api_key=api_key)
         
         last_msg = messages[-1]["content"]
-        
+        contents = []
+
         # 1. Handle Multi-modal (Image + Text)
         if image_base64:
-            # Note: Current Gemini SDK 'start_chat' does not support multi-modal history well.
-            # For vision tasks, we send the prompt + image as a single generation.
-            image_data = base64.b64decode(image_base64)
-            img = Image.open(io.BytesIO(image_data))
-            response = model.generate_content([last_msg, img])
-            return response.text
-            
-        # 2. Regular Text Chat (with history)
-        history = []
-        for msg in messages[:-1]:
-            role = "user" if msg["role"] == "user" else "model"
-            if role == "system": role = "user" # Gemini doesn't support system role in history well
-            history.append({"role": role, "parts": [msg["content"]]})
-        
-        chat = model.start_chat(history=history)
-        response = chat.send_message(last_msg)
+            # For vision tasks, we use the new SDK's Part mechanism
+            contents.append(
+                types.Content(
+                    role="user",
+                    parts=[
+                        types.Part.from_text(text=last_msg),
+                        types.Part.from_bytes(data=base64.b64decode(image_base64), mime_type="image/png")
+                    ]
+                )
+            )
+        else:
+            # 2. Regular Text Chat (with history)
+            for msg in messages:
+                role = "user" if msg["role"] == "user" else "model"
+                # Combine system instructions if needed, though Client supports system_instruction
+                if msg["role"] == "system":
+                    # For simplicity, treat system as user if not using dedicated parameter
+                    role = "user"
+                contents.append(types.Content(role=role, parts=[types.Part.from_text(text=msg["content"])]))
+
+        response = client.models.generate_content(
+            model=model_id,
+            contents=contents
+        )
         return response.text
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Gemini Error: {str(e)}")

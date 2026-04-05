@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Trash2, Loader2, CheckCircle2, ListTodo, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getEndpoint } from './config';
 
 function Tasks({ token }) {
   const [tasks, setTasks] = useState([]);
@@ -11,7 +10,7 @@ function Tasks({ token }) {
   const fetchTasks = async () => {
     setLoading(true);
     try {
-      const res = await fetch(getEndpoint('/tasks'), { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch('/tasks', { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) setTasks(await res.json());
     } catch (e) {
       console.error('Tasks fetch:', e);
@@ -28,7 +27,7 @@ function Tasks({ token }) {
     if (!title.trim()) return;
     setLoading(true);
     try {
-      await fetch(getEndpoint('/tasks'), {
+      await fetch('/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ title, description: '' }),
@@ -43,7 +42,7 @@ function Tasks({ token }) {
 
   const toggleTask = async (id, completed) => {
     try {
-      await fetch(getEndpoint(`/tasks/${id}`), {
+      await fetch(`/tasks/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ completed }),
@@ -56,7 +55,7 @@ function Tasks({ token }) {
 
   const deleteTask = async (id) => {
     try {
-      await fetch(getEndpoint(`/tasks/${id}`), { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      await fetch(`/tasks/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
       fetchTasks();
     } catch (e) {
       console.error('Delete task error:', e);

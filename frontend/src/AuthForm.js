@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import './AuthForm.css';
-import { getEndpoint } from './config';
 
 function AuthForm({ onAuth, onBack }) {
   const [view, setView] = useState('login'); // 'login', 'signup', 'reset'
@@ -25,7 +24,7 @@ function AuthForm({ onAuth, onBack }) {
       return;
     }
 
-    const url = view === 'login' ? getEndpoint('/login') : getEndpoint('/signup');
+    const url = view === 'login' ? '/login' : '/signup';
     const body = view === 'login'
       ? new URLSearchParams({ username, password })
       : JSON.stringify({ username, password, full_name: fullName });
@@ -139,7 +138,7 @@ function AuthForm({ onAuth, onBack }) {
                 onSuccess={async (credentialResponse) => {
                   setError('');
                   try {
-                    const res = await fetch(getEndpoint('/auth/google'), {
+                    const res = await fetch('/auth/google', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ token: credentialResponse.credential }),

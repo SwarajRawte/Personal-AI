@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Database, PlusCircle, Search, Trash2, CheckCircle2, XCircle, Loader2, FileUp, Sparkles, Activity, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getEndpoint } from './config';
 
-const API = getEndpoint('/api/rag');
+const API = 'http://localhost:8000/api/rag';
 
 function KnowledgeBase({ token }) {
   const [stats, setStats]       = useState({ notes_count: 0, chat_count: 0 });
@@ -79,7 +78,7 @@ function KnowledgeBase({ token }) {
     formData.append('file', file);
 
     try {
-      const r = await fetch(getEndpoint('/api/rag/upload'), {
+      const r = await fetch('http://localhost:8000/api/rag/upload', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
