@@ -15,3 +15,6 @@ sentence-transformers
 google-generativeai
 notion-client
 python-jose[cryptography]
+cryptography
+psycopg2-binary
+gunicorn
