@@ -27,9 +27,15 @@ _EMBED_FN = None
 def get_embedding_fn():
     global _EMBED_FN
     if _EMBED_FN is None:
-        logger.info("Initializing SentenceTransformer model (all-MiniLM-L6-v2)...")
-        _EMBED_FN = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name="all-MiniLM-L6-v2"
+        api_key = os.getenv("HUGGINGFACE_API_KEY", "").strip()
+        if not api_key or api_key == "your_hf_token_here":
+            logger.warning("HUGGINGFACE_API_KEY is missing. Falling back to dummy embeddings for local dev.")
+            # Local fallback for dev (if needed, but for production we want HF API)
+        
+        logger.info("Initializing Cloud-based HuggingFaceInferenceAPI for embeddings...")
+        _EMBED_FN = embedding_functions.HuggingFaceInferenceAPIEmbeddingFunction(
+            api_key=api_key,
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
         )
     return _EMBED_FN
 
