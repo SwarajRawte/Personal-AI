@@ -50,9 +50,14 @@ app.include_router(notes.router)
 app.include_router(calendar_oauth.router)
 app.include_router(rag_admin.router)
 
+@app.get("/api/health")
+def health_check():
+    return {"status": "healthy", "service": "kortex-backend"}
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Kortex backend!"}
+
 
 @app.post("/signup", response_model=schemas.UserOut)
 def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):

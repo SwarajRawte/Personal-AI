@@ -9,6 +9,8 @@ import Tasks from './Tasks';
 import Notes from './Notes';
 import Settings from './Settings';
 import KnowledgeBase from './KnowledgeBase';
+import NeuralBackground from './NeuralBackground';
+import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, MessageSquare, FileText, CheckSquare, Settings as SettingsIcon, Database, LogOut } from 'lucide-react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import './Dashboard.css';
@@ -28,6 +30,9 @@ function App() {
   const [user, setUser] = useState(null);
   const [currentView, setCurrentView] = useState('landing');
   const [activeView, setActiveView] = useState('dashboard');
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
+
+  const sidebarOffset = sidebarExpanded ? 260 : 72;
 
   let content;
 
@@ -58,7 +63,12 @@ function App() {
 
     content = (
       <div className="app-shell">
-        <Sidebar activeView={activeView} onNavigate={setActiveView} />
+        <Sidebar 
+          activeView={activeView} 
+          onNavigate={setActiveView} 
+          expanded={sidebarExpanded}
+          onExpandChange={setSidebarExpanded}
+        />
 
         {/* Top bar */}
         <header className="topbar">
@@ -75,25 +85,36 @@ function App() {
         </header>
 
         {/* Main content */}
-        <main className={`main-panel${activeView === 'chat' ? ' main-panel--chat' : ''}`}>
-          {viewContent}
+        <main className={`main-panel${activeView === 'chat' ? ' main-panel--chat' : ''}`} style={{ position: 'relative' }}>
+          <NeuralBackground />
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            {viewContent}
+          </div>
         </main>
       </div>
     );
   } else if (currentView === 'landing') {
     content = <LandingPage onGetStarted={() => setCurrentView('auth')} />;
   } else {
-    content = (
-      <AuthForm
-        onAuth={setUser}
-        onBack={() => setCurrentView('landing')}
-      />
-    );
+    content = <AuthForm onAuth={setUser} onBack={() => setCurrentView('landing')} />;
   }
 
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      {content}
+      <div className="app-container" style={{ backgroundColor: '#0b0e0e', minHeight: '100vh', position: 'relative' }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={user ? 'app' : currentView}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            style={{ position: 'relative', zIndex: 10, height: '100%' }}
+          >
+            {content}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </GoogleOAuthProvider>
   );
 }

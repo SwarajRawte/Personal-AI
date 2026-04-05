@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Database, PlusCircle, Search, Trash2, CheckCircle2, XCircle, Loader2, FileUp } from 'lucide-react';
+import { Database, PlusCircle, Search, Trash2, CheckCircle2, XCircle, Loader2, FileUp, Sparkles, Activity, Layers } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getEndpoint } from './config';
 
-const API = 'http://localhost:8000/api/rag';
+const API = getEndpoint('/api/rag');
 
 function KnowledgeBase({ token }) {
   const [stats, setStats]       = useState({ notes_count: 0, chat_count: 0 });
@@ -77,9 +79,9 @@ function KnowledgeBase({ token }) {
     formData.append('file', file);
 
     try {
-      const r = await fetch('http://localhost:8000/api/rag/upload', {
+      const r = await fetch(getEndpoint('/api/rag/upload'), {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }, // Form data handles content-type
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
       const data = await r.json();
@@ -93,7 +95,7 @@ function KnowledgeBase({ token }) {
       setStatus(`error|${err.message}`);
     }
     setLoading(false);
-    e.target.value = ''; // Reset input
+    e.target.value = '';
   };
 
   const handleClear = async () => {
@@ -120,139 +122,191 @@ function KnowledgeBase({ token }) {
     const [type, msg] = status.split('|');
     const Icon = type === 'success' ? CheckCircle2 : type === 'error' ? XCircle : Search;
     return (
-      <div className={`kb-status ${type}`}>
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`kb-status ${type}`}
+      >
         <Icon size={16} />
         {msg || type}
-      </div>
+      </motion.div>
     );
   };
 
   return (
-    <div className="kb-admin">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="kb-admin"
+    >
       <div className="kb-header">
-        <h2 className="kb-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Database size={24} /> Knowledge Base Admin
-        </h2>
-        <p className="kb-subtitle">
-          Manage the personal context your AI uses to answer questions.
-        </p>
+        <div className="flex-center" style={{ gap: '16px', marginBottom: '10px' }}>
+           <div className="feature-icon-mini lg">
+              <Database size={32} className="glow-icon" />
+           </div>
+           <div>
+              <h2 className="kb-title">Knowledge Nexus Admin</h2>
+              <p className="kb-subtitle">Manage high-dimensional context & neural memory</p>
+           </div>
+        </div>
       </div>
 
-      <div className="kb-stats">
-        <div className="kb-stat-card">
-          <span className="kb-stat-value">{stats.notes_count}</span>
-          <span className="kb-stat-label">Notes & Docs Indexed</span>
+      <div className="kb-stats-bento">
+        <div className="kb-stat-card glass-item">
+          <div className="stat-icon-wrap"><Activity size={20} /></div>
+          <div className="stat-data">
+            <span className="kb-stat-value">{stats.notes_count}</span>
+            <span className="kb-stat-label">Indexed Documents</span>
+          </div>
         </div>
-        <div className="kb-stat-card">
-          <span className="kb-stat-value">{stats.chat_count}</span>
-          <span className="kb-stat-label">Chat Turns Indexed</span>
+        <div className="kb-stat-card glass-item">
+          <div className="stat-icon-wrap"><Layers size={20} /></div>
+          <div className="stat-data">
+             <span className="kb-stat-value">{stats.chat_count}</span>
+             <span className="kb-stat-label">Active Neural Threads</span>
+          </div>
         </div>
-        <button className="kb-clear-btn" onClick={handleClear} disabled={loading}>
-          <Trash2 size={16} /> Clear All
+        <button className="kb-clear-btn premium glass-item" onClick={handleClear} disabled={loading}>
+          <div className="btn-content">
+            <Trash2 size={18} />
+            <span>Purge Memory</span>
+          </div>
         </button>
       </div>
 
-      <div className="kb-tabs">
+      <div className="kb-tabs-dock glass-item">
         <button
-          className={`kb-tab ${tab === 'ingest' ? 'active' : ''}`}
+          className={`kb-tab-nav ${tab === 'ingest' ? 'active' : ''}`}
           onClick={() => { setTab('ingest'); setStatus(''); }}
         >
-          <PlusCircle size={16} /> Add Knowledge
+          <PlusCircle size={18} /> Ingest
         </button>
         <button
-          className={`kb-tab ${tab === 'search' ? 'active' : ''}`}
+          className={`kb-tab-nav ${tab === 'search' ? 'active' : ''}`}
           onClick={() => { setTab('search'); setStatus(''); }}
         >
-          <Search size={16} /> Search Knowledge
+          <Search size={18} /> Traverse
         </button>
         <button
-          className={`kb-tab ${tab === 'upload' ? 'active' : ''}`}
+          className={`kb-tab-nav ${tab === 'upload' ? 'active' : ''}`}
           onClick={() => { setTab('upload'); setStatus(''); }}
         >
-          <FileUp size={16} /> Upload Documents
+          <FileUp size={18} /> Upload
         </button>
       </div>
 
-      {tab === 'ingest' && (
-        <div className="kb-panel">
-          <label className="kb-label">Source label (optional)</label>
-          <input
-            className="kb-input"
-            placeholder="e.g. meeting-notes, preferences, bio…"
-            value={label}
-            onChange={e => setLabel(e.target.value)}
-          />
+      <div className="kb-main-content">
+        <AnimatePresence mode="wait">
+          {tab === 'ingest' && (
+            <motion.div 
+              key="ingest"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              className="kb-panel-modern glass-item"
+            >
+              <div className="input-group">
+                <label className="kb-label-modern">Source Identifier</label>
+                <input
+                  className="neural-input-title"
+                  placeholder="e.g. meeting-notes, preferences, bio…"
+                  value={label}
+                  onChange={e => setLabel(e.target.value)}
+                />
+              </div>
 
-          <label className="kb-label">Content to add</label>
-          <textarea
-            className="kb-textarea"
-            placeholder="Paste any text you want the AI to remember..."
-            value={ingestText}
-            onChange={e => setIngest(e.target.value)}
-            rows={8}
-          />
+              <div className="input-group">
+                <label className="kb-label-modern">Knowledge Fragment</label>
+                <textarea
+                  className="neural-input-body kb-textarea"
+                  placeholder="Paste any text you want the AI to remember..."
+                  value={ingestText}
+                  onChange={e => setIngest(e.target.value)}
+                />
+              </div>
 
-          <div className="kb-actions">
-            <button className="kb-primary-btn" onClick={handleIngest} disabled={loading || !ingestText.trim()}>
-              {loading ? <Loader2 className="animate-spin" size={16} /> : 'Ingest'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {tab === 'search' && (
-        <div className="kb-panel">
-          <label className="kb-label">Semantic search query</label>
-          <div className="kb-search-row">
-            <input
-              className="kb-input"
-              placeholder="Search your knowledge base…"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            />
-            <button className="kb-primary-btn" onClick={handleSearch} disabled={loading || !query.trim()}>
-              {loading ? <Loader2 className="animate-spin" size={16} /> : <Search size={16} />}
-            </button>
-          </div>
-
-          {results.length > 0 && (
-            <div className="kb-results">
-              <p className="kb-results-count">{results.length} result{results.length !== 1 ? 's' : ''} found</p>
-              {results.map((r, i) => (
-                <div key={i} className="kb-result-card">
-                  <span className="kb-result-num">#{i + 1}</span>
-                  <p className="kb-result-text">{r}</p>
-                </div>
-              ))}
-            </div>
+              <div className="kb-actions">
+                <button className="neural-submit-btn" onClick={handleIngest} disabled={loading || !ingestText.trim()}>
+                  {loading ? <Loader2 className="animate-spin" size={18} /> : 'Secure Ingest'}
+                </button>
+              </div>
+            </motion.div>
           )}
-        </div>
-      )}
 
-      {tab === 'upload' && (
-        <div className="kb-panel">
-          <div className="kb-upload-zone">
-            <FileUp size={48} className="kb-upload-icon" />
-            <h3>Drop or Select Document</h3>
-            <p className="kb-upload-desc">PDF, CSV, or TXT (Max 10MB)</p>
-            <input
-              type="file"
-              accept=".pdf,.csv,.txt"
-              onChange={handleFileUpload}
-              className="kb-file-input"
-              id="kb-file-upload"
-              disabled={loading}
-            />
-            <label htmlFor="kb-file-upload" className="kb-primary-btn">
-              {loading ? <Loader2 className="animate-spin" size={18} /> : 'Choose File'}
-            </label>
-          </div>
-        </div>
-      )}
+          {tab === 'search' && (
+            <motion.div 
+              key="search"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              className="kb-panel-modern glass-item"
+            >
+              <div className="kb-search-row-modern">
+                <Sparkles size={20} className="search-sparkle-large" />
+                <input
+                  className="neural-input-title "
+                  placeholder="Search semantic space…"
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                />
+                <button className="neural-submit-btn mini" onClick={handleSearch} disabled={loading || !query.trim()}>
+                  {loading ? <Loader2 className="animate-spin" size={18} /> : <Search size={20} />}
+                </button>
+              </div>
+
+              {results.length > 0 && (
+                <div className="kb-results-modern">
+                  <div className="results-badge">{results.length} Matches Found</div>
+                  {results.map((r, i) => (
+                    <motion.div 
+                      key={i} 
+                      className="kb-result-card-modern glass-item"
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                    >
+                      <div className="result-num-neural">0{i + 1}</div>
+                      <p className="kb-result-text-modern">{r}</p>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {tab === 'upload' && (
+            <motion.div 
+               key="upload"
+               initial={{ opacity: 0, x: -10 }}
+               animate={{ opacity: 1, x: 0 }}
+               exit={{ opacity: 0, x: 10 }}
+               className="kb-panel-modern glass-item"
+            >
+              <div className="kb-upload-zone-modern">
+                <div className="upload-glow-ring" />
+                <FileUp size={48} className="kb-upload-icon-modern" />
+                <h3>Neural Doc Uplink</h3>
+                <p className="kb-upload-desc">PDF, CSV, or TXT (Max 10MB)</p>
+                <input
+                  type="file"
+                  accept=".pdf,.csv,.txt"
+                  onChange={handleFileUpload}
+                  className="kb-file-input"
+                  id="kb-file-upload-modern"
+                  disabled={loading}
+                />
+                <label htmlFor="kb-file-upload-modern" className="neural-submit-btn upload-btn">
+                  {loading ? <Loader2 className="animate-spin" size={18} /> : 'Select Fragment'}
+                </label>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {renderStatus()}
-    </div>
+    </motion.div>
   );
 }
 
